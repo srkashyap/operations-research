@@ -1,0 +1,56 @@
+import numpy as np
+import csv
+import math
+from itertools import combinations
+import queue
+from gurobipy import *
+import time
+
+lst = []
+points=[]
+lst=[]
+with open(file_name) as f:
+    [lst.append(line.split()) for line in f]
+    
+for i in lst[1:]:
+    points.append((float(i[0]),float(i[1])))
+n=len(points)
+dist = {(i,j):
+        math.sqrt(sum((points[i][k]-points[j][k])**2 for k in range(2)))
+        for i in range(n) for j in range(i)}
+# dist.keys()
+
+m = Model('MTZ')
+x = {}
+u = {}
+u_vals = range(n)
+for i in range(n):
+    for j in range(n):
+        if i < j:
+            x[i,j] = m.addVar(obj=dist[j,i], vtype=GRB.BINARY, name='x%d,%d'%(i,j))
+        if i > j:
+            x[i,j] = m.addVar(obj=dist[i,j], vtype=GRB.BINARY, name='x%d,%d'%(i,j))
+u = m.addVars(u_vals,vtype = GRB.INTEGER, name = 'u')
+m.update()
+
+for i in range(n):
+    m.addConstr(quicksum(x[i,j] for j in range(0,i))+ quicksum(x[i,j] for j in range(i+1,n))==1)
+    m.addConstr(quicksum(x[j,i] for j in range(0,i))+ quicksum(x[j,i] for j in range(i+1,n))==1)
+    
+for i in range(1,n):
+    for j in range(1,n):
+        if i < j :
+            m.addConstr(u[i] - u[j] + (n * x[i,j]) <= (n-1))
+        if i > j:
+            m.addConstr(u[i] - u[j] + (n * x[i,j]) <= (n-1))
+            
+start = time.time()
+m.optimize()
+end = time.time()
+print('time taken = = ', end - start)
+for i in range(n):
+    for j in range(n):
+        if i < j and x[i,j].x>0.5:
+            print('x(%d,%d)'%(i,j))
+        if i > j and x[i,j].x>0.5:
+            print('x(%d,%d)'%(i,j))
