@@ -32,6 +32,7 @@ for i in range(len(n)):
     x = int(x)
     demands[x-1] = int(y)
 nodes = []
+
 for i in m:
     x,y,z = (i.split())
     nodes.append([int(y),int(z)])
