@@ -1,0 +1,208 @@
+import numpy as np
+import math
+import matplotlib.pyplot as plt
+import copy
+
+
+f = open("A-n45-k6.vrp", 'r')
+m = []
+n = []
+caps = []
+count = 0 
+for i in f:
+    if count == 3:
+        dims = i.split()
+        dimension = int(dims[2])
+        print(dimension)
+#         break
+        
+    elif count == 5:
+        capacity = int(i.split()[2])
+    elif count>6 and count<= dimension+6:
+        m.append(i)
+    elif count >dimension + 7 and count <= 2*dimension + 7:
+        n.append(i)
+    count+=1
+
+
+demands = {}
+for i in range(len(n)):
+#     print(n[i])
+    x,y = n[i].split()
+    x = int(x)
+    demands[x-1] = int(y)
+nodes = []
+for i in m:
+    x,y,z = (i.split())
+    nodes.append([int(y),int(z)])
+l = len(nodes)
+dist = {(i,j):
+        math.sqrt(sum((nodes[i][k]-nodes[j][k])**2 for k in range(2)))
+        for i in range(l) for j in range(i)}
+        
+#
+#step 0
+routes = {}
+route_costs = {}
+for i in range(1,len(nodes)):
+    routes[i] = i
+    route_costs[i] = 2 * dist[i,0]
+    
+#step1
+savings = {}
+for i in range(1,len(nodes)):
+    for j in range(1,len(nodes)):
+        if i!=j and (i,j) in dist:
+            savings[i,j] = dist[i,0] + dist[ j,0] - dist [i,j]
+# order = sorted(savings.values(), reverse =True)
+orders = []
+for key, value in savings.items():
+    temp = [value,key]
+    orders.append(temp)
+orders.sort(reverse=True)
+# orders
+
+
+
+
+visited = set()
+new_route = {}
+route_cost = 0
+temp = [0]
+for i in orders:
+    saving = i[0]
+    x = i[1][0]
+    y = i[1][1]
+#     print(x,y,visited,new_route,'\n')
+    if (x,y) not in new_route.keys() and (y,x) not in new_route.keys(): 
+        lst = list(sum(new_route.keys(), ()))
+        mid_points = visited - set(lst)
+#         print('kashyap',mid_points)
+        if x in mid_points or y in mid_points:
+            pass
+#         print(lst)
+        elif x in lst and y in lst:
+#             print('  1  ********************')
+            pt1_x= lst.index(x)
+            if pt1_x%2 == 0:
+                pt1=(x,lst[pt1_x + 1])
+            else:    
+                pt1=(lst[pt1_x - 1],x)
+                
+            pt2_x= lst.index(y)
+#             print('here',pt2_x)
+            if pt2_x%2 == 0:
+                pt2=(y,lst[pt2_x + 1])
+            else:    
+                pt2=(lst[pt2_x - 1],y)
+#             print('here',pt1,pt2)
+            if new_route[pt1][1]+new_route[pt2][1]<=capacity:
+#                 print('success')
+                temp=new_route[pt1][0]+new_route[pt2][0]
+                new_route[(temp[0],temp[-1])] = [temp,new_route[pt1][1]+new_route[pt2][1]]
+                del new_route[pt1]
+                del new_route[pt2]
+                
+        elif x in lst:
+#             print('  2  ')
+            pt_x= lst.index(x)
+            if pt_x%2 == 0:
+                new_pt=lst[pt_x + 1]
+                pt=(x,new_pt)
+                if new_route[pt][1]+demands[y] <= capacity:
+#                     print(y)
+                    a = new_route[pt][0].index(x)
+#                     print(a)
+                    if a == 0:
+                        new_route[(new_pt,y)] = [[y] + new_route[pt][0] ,new_route[pt][1]+demands[y]]
+                    else:
+                        new_route[(new_pt,y)] = [new_route[pt][0] + [y] ,new_route[pt][1]+demands[y]]
+                    visited.add(y)
+                    del new_route[pt]
+            else:    
+                new_pt=lst[pt_x - 1]
+                pt=(new_pt,x)
+                if new_route[pt][1]+demands[y] <= capacity:
+                    a = new_route[pt][0].index(x)
+#                     print(a)
+                    if a == 0:
+                        new_route[(new_pt,y)] = [[y] + new_route[pt][0] ,new_route[pt][1]+demands[y]]
+                    else:
+                        new_route[(new_pt,y)] = [new_route[pt][0] + [y] ,new_route[pt][1]+demands[y]]
+                    visited.add(y)
+                    del new_route[pt]
+            
+        elif y in lst:
+#             print('  3  ')
+            pt_y= lst.index(y)
+            
+            if pt_y%2 == 0:
+#                 print('hahhaha even')
+                new_pt=lst[pt_y + 1]
+                pt=(y,new_pt)
+                if new_route[pt][1] + demands[x] <= capacity:
+#                     print('hello even')
+                    a = new_route[pt][0].index(y)  
+#                     print(a)
+                    if a == 0:
+                        new_route[(new_pt,x)] = [[x] + new_route[pt][0] ,new_route[pt][1]+demands[x]]
+                    else:
+                        new_route[(new_pt,x)] = [new_route[pt][0] + [x] ,new_route[pt][1]+demands[x]]
+                    visited.add(x)
+                    del new_route[pt]
+            else:    
+                new_pt=lst[pt_y - 1]
+                pt=(new_pt,y)
+#                 print('hahhaha odd')
+                if new_route[pt][1]+demands[x] <= capacity:
+#                     print('hello odd')
+                    a = new_route[pt][0].index(y)  
+#                     print(a)
+                    if a == 0:
+                        new_route[(new_pt,x)] = [[x] + new_route[pt][0] ,new_route[pt][1]+demands[x]]
+                    else:
+                        new_route[(new_pt,x)] = [new_route[pt][0] + [x] ,new_route[pt][1]+demands[x]]
+                    visited.add(x)
+                    del new_route[pt]
+            
+                
+        elif x in visited or y in visited:
+            pass
+            
+        else:
+#             print('  4  ')
+            new_route[(x,y)] = [[x,y], sum([demands[i] for i in [x,y]])]
+            visited.add(x)
+            visited.add(y)
+            
+cost = 0
+for i in new_route.values():
+    lst_new = []
+    lst_new = copy.deepcopy( i[0])
+    lst_new.insert(0,0)
+    lst_new.append(0)
+    l = len(lst_new)
+    for j in range(0,l-1):
+        if (lst_new[j],lst_new[j+1]) in dist:
+            cost += dist[lst_new[j],lst_new[j+1]]
+        else:
+            cost += dist[lst_new[j+1],lst_new[j]]
+print(cost)
+def get_cmap(n, name='hsv'):
+    return plt.cm.get_cmap(name, n)
+color = ['r','g','b','y','p']
+cmap = get_cmap(len(new_route))
+count = 1 
+for visits in new_route.values():
+    visit = visits[0]
+    xs = [nodes[i][0] for i in visit]
+    xs.append(nodes[0][0])
+    xs.insert(0,nodes[0][0])
+    ys = [nodes[i][1] for i in visit]
+    ys.append(nodes[0][1])
+    ys.insert(0,nodes[0][1])
+    plt.plot(nodes[0][0],nodes[0][1],marker='s')
+    n = plt.plot(xs,ys,c=cmap(count),marker='o')
+    count +=1
+plt.show()
+
