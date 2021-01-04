@@ -1,4 +1,4 @@
-# operations-research
+# Improvised clarke and wright savings algorithm for vehicle routing problem
 The Travelling salesman problem deals with finding a route connecting all the given points while also minimizing the cost of the route. 
 
 The Vehicle routing problem is a subclass of the travelling salesman problem wherein we have a limit on the vehicle serving the points and each point has a specified demand and as a consequence multiple routes maybe needed. 
